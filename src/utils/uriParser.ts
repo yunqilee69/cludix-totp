@@ -6,12 +6,15 @@
 import * as OTPAuth from 'otpauth';
 import { TotpConfig } from './totp';
 
+export type CodeVisibility = 'inherit' | 'hidden' | 'visible';
+
 export interface TotpAccount {
   id: string;
   issuer: string;
   account: string;
   uri: string;
   config: TotpConfig;
+  codeVisibility?: CodeVisibility;
 }
 
 function normalizeSecret(secret: string): string {

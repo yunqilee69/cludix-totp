@@ -1,39 +1,65 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { TotpCard } from './components/TotpCard';
 import { AddAccountModal } from './components/AddAccountModal';
 import { TotpAccount } from './utils/uriParser';
 
+interface AppSettings {
+  hideCodesOnLaunch: boolean;
+}
+
 interface AppConfig {
   accounts: TotpAccount[];
+  settings?: Partial<AppSettings>;
+}
+
+const defaultSettings: AppSettings = {
+  hideCodesOnLaunch: false,
+};
+
+function normalizeConfig(config: AppConfig): { accounts: TotpAccount[]; settings: AppSettings } {
+  return {
+    accounts: config.accounts || [],
+    settings: {
+      ...defaultSettings,
+      ...config.settings,
+    },
+  };
 }
 
 function App() {
   const [accounts, setAccounts] = useState<TotpAccount[]>([]);
+  const [settings, setSettings] = useState<AppSettings>(defaultSettings);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+  const [editingAccount, setEditingAccount] = useState<TotpAccount | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  // Load config on mount
   useEffect(() => {
     loadConfig();
   }, []);
 
   const loadConfig = async () => {
     try {
-      const config = await invoke<AppConfig>('get_config');
-      setAccounts(config.accounts || []);
+      const rawConfig = await invoke<AppConfig>('get_config');
+      const config = normalizeConfig(rawConfig);
+      setAccounts(config.accounts);
+      setSettings(config.settings);
     } catch (err) {
       console.error('Failed to load config:', err);
       setAccounts([]);
+      setSettings(defaultSettings);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const saveConfig = async (newAccounts: TotpAccount[]) => {
+  const saveConfig = async (newAccounts: TotpAccount[], newSettings: AppSettings = settings) => {
     try {
       await invoke('save_config', {
-        config: { accounts: newAccounts }
+        config: {
+          accounts: newAccounts,
+          settings: newSettings,
+        }
       });
     } catch (err) {
       console.error('Failed to save config:', err);
@@ -43,13 +69,41 @@ function App() {
   const handleAddAccount = async (account: TotpAccount) => {
     const newAccounts = [...accounts, account];
     setAccounts(newAccounts);
-    await saveConfig(newAccounts);
+    await saveConfig(newAccounts, settings);
   };
 
   const handleDeleteAccount = async (id: string) => {
     const newAccounts = accounts.filter((a) => a.id !== id);
     setAccounts(newAccounts);
-    await saveConfig(newAccounts);
+    await saveConfig(newAccounts, settings);
+  };
+
+  const handleUpdateAccount = async (updatedAccount: TotpAccount) => {
+    const newAccounts = accounts.map((account) => (
+      account.id === updatedAccount.id ? updatedAccount : account
+    ));
+    setAccounts(newAccounts);
+    setEditingAccount(null);
+    await saveConfig(newAccounts, settings);
+  };
+
+  const handleToggleDefaultHidden = async () => {
+    const newSettings = {
+      ...settings,
+      hideCodesOnLaunch: !settings.hideCodesOnLaunch,
+    };
+    setSettings(newSettings);
+    await saveConfig(accounts, newSettings);
+  };
+
+  const openEditModal = (account: TotpAccount) => {
+    setEditingAccount(account);
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setEditingAccount(null);
   };
 
   if (isLoading) {
@@ -65,10 +119,22 @@ function App() {
   return (
     <div className="container">
       <div className="header">
-        <h1>Nebula TOTP</h1>
-        <button className="add-btn" onClick={() => setIsModalOpen(true)}>
-          + 添加账号
-        </button>
+        <div>
+          <h1>Cludix TOTP</h1>
+        </div>
+        <div className="header-actions">
+          <label className="settings-toggle">
+            <input
+              type="checkbox"
+              checked={settings.hideCodesOnLaunch}
+              onChange={handleToggleDefaultHidden}
+            />
+            <span>打开应用时默认隐藏验证码</span>
+          </label>
+          <button className="add-btn" onClick={() => setIsModalOpen(true)}>
+            + 添加账号
+          </button>
+        </div>
       </div>
 
       {accounts.length === 0 ? (
@@ -82,7 +148,9 @@ function App() {
             <TotpCard
               key={account.id}
               account={account}
+              hideCodesOnLaunch={settings.hideCodesOnLaunch}
               onDelete={handleDeleteAccount}
+              onEdit={openEditModal}
             />
           ))}
         </div>
@@ -90,8 +158,10 @@ function App() {
 
       <AddAccountModal
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        onClose={closeModal}
         onAdd={handleAddAccount}
+        editAccount={editingAccount}
+        onSaveEdit={handleUpdateAccount}
       />
     </div>
   );
