@@ -21,14 +21,16 @@ function normalizeSecret(secret: string): string {
   return secret.trim().replace(/\s+/g, '').toUpperCase();
 }
 
-/**
- * Parse otpauth://totp URI
- */
+function normalizeUri(uri: string): string {
+  return uri.replace(/&amp;/gi, '&');
+}
+
 export function parseOtpAuthUri(uri: string): TotpAccount {
   let parsed: OTPAuth.HOTP | OTPAuth.TOTP;
+  const normalizedUri = normalizeUri(uri);
 
   try {
-    parsed = OTPAuth.URI.parse(uri);
+    parsed = OTPAuth.URI.parse(normalizedUri);
   } catch (error) {
     throw new Error(error instanceof Error ? error.message : 'Invalid otpauth URI');
   }
@@ -54,14 +56,14 @@ export function parseOtpAuthUri(uri: string): TotpAccount {
 
   const issuer = parsed.issuer || '';
   const account = parsed.label;
-  const normalizedUri = parsed.toString();
+  const canonicalUri = parsed.toString();
   const id = `${issuer}:${account}:${secret.slice(0, 4)}`;
 
   return {
     id,
     issuer,
     account,
-    uri: normalizedUri,
+    uri: canonicalUri,
     config: {
       secret,
       digits: parsed.digits,
