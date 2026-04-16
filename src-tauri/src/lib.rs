@@ -1,5 +1,3 @@
-use tauri::Manager;
-
 /// Get config directory path (统一使用 ~/.config/cludix-totp/)
 fn get_config_dir() -> Result<std::path::PathBuf, String> {
     let home = dirs::home_dir().ok_or("Cannot determine home directory")?;
@@ -46,6 +44,8 @@ fn save_config(_app: tauri::AppHandle, config: serde_json::Value) -> Result<(), 
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
+        .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_fs::init())
         .invoke_handler(tauri::generate_handler![get_config, save_config])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

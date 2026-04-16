@@ -311,3 +311,80 @@ body {
   font-size: 16px;
   margin-bottom: 12px;
 }
+
+/* Mode Selector Styles */
+.mode-selector {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 4px;
+  border-radius: 8px;
+}
+
+.mode-btn {
+  flex: 1;
+  background: transparent;
+  color: #a1a1aa;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.mode-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.mode-btn.active {
+  background: #667eea;
+  color: white;
+}
+
+/* QR Import Section */
+.qr-import-section {
+  padding: 8px 0;
+}
+
+.qr-import-box {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 24px;
+  text-align: center;
+}
+
+.qr-icon {
+  font-size: 48px;
+  margin-bottom: 12px;
+}
+
+.qr-import-box p {
+  color: #a1a1aa;
+  font-size: 14px;
+  margin-bottom: 16px;
+}
+
+.import-btn {
+  background: #667eea;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.import-btn:hover {
+  background: #764ba2;
+}
+
+.import-btn:disabled {
+  background: #4a4a5e;
+  cursor: not-allowed;
+}
