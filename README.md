@@ -26,19 +26,50 @@
 npm install
 
 # 启动开发服务器
-npm run tauri dev
+npm run tauri:dev
 ```
 
-### 构建发布版本
+### 构建桌面应用
 
 ```bash
-# 构建生产版本
-npm run tauri build
+# 构建当前平台（本地开发时使用）
+npm run build:current
+
+# Windows 平台
+npm run build:win        # x64 架构
+npm run build:win-arm64  # ARM64 架构
+
+# macOS 平台
+npm run build:mac        # Universal (Intel + ARM)
+npm run build:mac-x64    # 仅 Intel
+npm run build:mac-arm64  # 仅 Apple Silicon
+
+# Linux 平台
+npm run build:linux      # x64 架构
+npm run build:linux-arm64  # ARM64 架构
 ```
+
+**注意**：跨平台构建需要在对应操作系统上运行，或使用 CI/CD。
+
+### 构建产物位置
 
 构建产物位于 `src-tauri/target/release/bundle/` 目录：
 
-- Windows: `nsis/` 目录下的 `.exe` 安装包
+| 平台 | 产物路径 | 格式 |
+|------|----------|------|
+| Windows | `nsis/` | `.exe` 安装包 |
+| macOS | `dmg/` | `.dmg` 安装包 |
+| Linux | `deb/`, `rpm/`, `appimage/` | 多格式 |
+
+### 快速构建命令
+
+| 命令 | 说明 |
+|------|------|
+| `npm run tauri:dev` | 开发模式（热更新） |
+| `npm run build:current` | 构建当前平台 |
+| `npm run build:win` | 构建 Windows x64 |
+| `npm run build:mac` | 构建 macOS Universal |
+| `npm run build:linux` | 构建 Linux x64 |
 
 ## 使用方式
 

@@ -7,7 +7,16 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "tauri:dev": "tauri dev",
+    "build:win": "tauri build --target x86_64-pc-windows-msvc",
+    "build:win-arm64": "tauri build --target aarch64-pc-windows-msvc",
+    "build:mac": "tauri build --target universal-apple-darwin",
+    "build:mac-x64": "tauri build --target x86_64-apple-darwin",
+    "build:mac-arm64": "tauri build --target aarch64-apple-darwin",
+    "build:linux": "tauri build --target x86_64-unknown-linux-gnu",
+    "build:linux-arm64": "tauri build --target aarch64-unknown-linux-gnu",
+    "build:current": "tauri build"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.0.0",
