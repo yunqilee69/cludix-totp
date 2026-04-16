@@ -1,8 +1,9 @@
 /**
  * otpauth:// URI parser
- * Parses Google Authenticator compatible URI format
+ * Delegates parsing to OTPAuth for standards-compatible behavior.
  */
 
+import * as OTPAuth from 'otpauth';
 import { TotpConfig } from './totp';
 
 export interface TotpAccount {
@@ -13,82 +14,55 @@ export interface TotpAccount {
   config: TotpConfig;
 }
 
+function normalizeSecret(secret: string): string {
+  return secret.trim().replace(/\s+/g, '').toUpperCase();
+}
+
 /**
  * Parse otpauth://totp URI
- * Format: otpauth://totp/[issuer]:[account]?secret=[Base32]&issuer=[issuer]&algorithm=[SHA1]&digits=[6]&period=[30]
  */
 export function parseOtpAuthUri(uri: string): TotpAccount {
-  if (!uri.startsWith('otpauth://totp/')) {
+  let parsed: OTPAuth.HOTP | OTPAuth.TOTP;
+
+  try {
+    parsed = OTPAuth.URI.parse(uri);
+  } catch (error) {
+    throw new Error(error instanceof Error ? error.message : 'Invalid otpauth URI');
+  }
+
+  if (!(parsed instanceof OTPAuth.TOTP)) {
     throw new Error('Invalid URI: must be otpauth://totp format');
   }
 
-  // Remove the otpauth://totp/ prefix
-  const rest = uri.slice('otpauth://totp/'.length);
-
-  // Split path and query
-  const [pathPart, queryPart] = rest.split('?');
-
-  // Parse account info from path
-  // Format: issuer:account or just account
-  let issuer = '';
-  let account = '';
-
-  if (pathPart.includes(':')) {
-    const colonIndex = pathPart.indexOf(':');
-    issuer = decodeURIComponent(pathPart.slice(0, colonIndex));
-    account = decodeURIComponent(pathPart.slice(colonIndex + 1));
-  } else {
-    account = decodeURIComponent(pathPart);
-  }
-
-  // Parse query parameters
-  const params = new URLSearchParams(queryPart || '');
-
-  // Secret is required
-  const secret = params.get('secret');
-  if (!secret) {
-    throw new Error('Missing required parameter: secret');
-  }
-
-  // Issuer can be in query params too (takes precedence if present)
-  const queryIssuer = params.get('issuer');
-  if (queryIssuer) {
-    issuer = decodeURIComponent(queryIssuer);
-  }
-
-  // Algorithm (default SHA1)
-  const algorithmParam = params.get('algorithm') || 'SHA1';
-  const algorithm: 'SHA1' | 'SHA256' | 'SHA512' =
-    algorithmParam.toUpperCase() as 'SHA1' | 'SHA256' | 'SHA512';
+  const secret = normalizeSecret(parsed.secret.base32);
+  const algorithm = parsed.algorithm.toUpperCase() as TotpConfig['algorithm'];
 
   if (!['SHA1', 'SHA256', 'SHA512'].includes(algorithm)) {
-    throw new Error(`Invalid algorithm: ${algorithmParam}`);
+    throw new Error(`Invalid algorithm: ${parsed.algorithm}`);
   }
 
-  // Digits (default 6)
-  const digits = parseInt(params.get('digits') || '6', 10);
-  if (![6, 8].includes(digits)) {
-    throw new Error(`Invalid digits: ${digits}`);
+  if (![6, 8].includes(parsed.digits)) {
+    throw new Error(`Invalid digits: ${parsed.digits}`);
   }
 
-  // Period (default 30)
-  const period = parseInt(params.get('period') || '30', 10);
-  if (period <= 0) {
-    throw new Error(`Invalid period: ${period}`);
+  if (parsed.period <= 0) {
+    throw new Error(`Invalid period: ${parsed.period}`);
   }
 
-  // Generate unique ID
+  const issuer = parsed.issuer || '';
+  const account = parsed.label;
+  const normalizedUri = parsed.toString();
   const id = `${issuer}:${account}:${secret.slice(0, 4)}`;
 
   return {
     id,
     issuer,
     account,
-    uri,
+    uri: normalizedUri,
     config: {
       secret,
-      digits,
-      period,
+      digits: parsed.digits,
+      period: parsed.period,
       algorithm,
     },
   };

@@ -7,6 +7,10 @@ interface TotpCardProps {
   onDelete: (id: string) => void;
 }
 
+function getCurrentCounter(period: number): number {
+  return Math.floor(Date.now() / 1000 / period);
+}
+
 export function TotpCard({ account, onDelete }: TotpCardProps) {
   const [code, setCode] = useState<string>('------');
   const [remaining, setRemaining] = useState<number>(30);
@@ -25,16 +29,21 @@ export function TotpCard({ account, onDelete }: TotpCardProps) {
   }, [account.config]);
 
   useEffect(() => {
+    let lastCounter = getCurrentCounter(period);
+
     // Generate initial code
     updateCode();
+    setRemaining(getRemainingSeconds(period));
 
     // Update remaining time every 100ms for smooth progress bar
     const timeInterval = setInterval(() => {
       const newRemaining = getRemainingSeconds(period);
+      const currentCounter = getCurrentCounter(period);
+
       setRemaining(newRemaining);
 
-      // Regenerate code when period resets
-      if (newRemaining === period) {
+      if (currentCounter !== lastCounter) {
+        lastCounter = currentCounter;
         updateCode();
       }
     }, 100);
