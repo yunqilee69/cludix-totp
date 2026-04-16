@@ -17,96 +17,101 @@
 
 - Node.js 18+
 - Rust 1.70+
-- pnpm / npm
 
 ### 开发模式
 
 ```bash
-# 安装依赖
 npm install
-
-# 启动开发服务器
 npm run tauri:dev
 ```
 
 ### 构建桌面应用
 
 ```bash
-# 构建当前平台（本地开发时使用）
+# 构建当前平台
 npm run build:current
 
-# Windows 平台
-npm run build:win        # x64 架构
-npm run build:win-arm64  # ARM64 架构
+# Windows x64
+npm run build:win
 
-# macOS 平台
-npm run build:mac        # Universal (Intel + ARM)
-npm run build:mac-x64    # 仅 Intel
-npm run build:mac-arm64  # 仅 Apple Silicon
+# Windows ARM64
+npm run build:win-arm64
 
-# Linux 平台
-npm run build:linux      # x64 架构
-npm run build:linux-arm64  # ARM64 架构
+# macOS Universal (Intel + Apple Silicon)
+npm run build:mac
+
+# macOS Intel
+npm run build:mac-x64
+
+# macOS Apple Silicon
+npm run build:mac-arm64
+
+# Linux x64
+npm run build:linux
+
+# Linux ARM64
+npm run build:linux-arm64
 ```
 
-**注意**：跨平台构建需要在对应操作系统上运行，或使用 CI/CD。
+**注意**：跨平台构建需要在对应操作系统上运行。
 
 ### 构建产物位置
 
-构建产物位于 `src-tauri/target/release/bundle/` 目录：
-
-| 平台 | 产物路径 | 格式 |
-|------|----------|------|
-| Windows | `nsis/` | `.exe` 安装包 |
-| macOS | `dmg/` | `.dmg` 安装包 |
-| Linux | `deb/`, `rpm/`, `appimage/` | 多格式 |
-
-### 快速构建命令
-
-| 命令 | 说明 |
-|------|------|
-| `npm run tauri:dev` | 开发模式（热更新） |
-| `npm run build:current` | 构建当前平台 |
-| `npm run build:win` | 构建 Windows x64 |
-| `npm run build:mac` | 构建 macOS Universal |
-| `npm run build:linux` | 构建 Linux x64 |
+| 平台 | 路径 | 格式 |
+|------|------|------|
+| Windows | `src-tauri/target/release/bundle/nsis/` | `.exe` 安装包 |
+| macOS | `src-tauri/target/release/bundle/dmg/` | `.dmg` 安装包 |
+| Linux | `src-tauri/target/release/bundle/deb/` | `.deb` 包 |
+| Linux | `src-tauri/target/release/bundle/rpm/` | `.rpm` 包 |
+| Linux | `src-tauri/target/release/bundle/appimage/` | `.AppImage` |
 
 ## 使用方式
 
-### 1. 添加账号
+### 添加账号
 
-点击右上角「添加账号」按钮，粘贴从认证服务获取的 `otpauth://totp` URI：
+点击右上角「添加账号」按钮，粘贴从认证服务获取的 `otpauth://totp` URI。
+
+**URI 格式说明**：
 
 ```
-otpauth://totp/issuer:account?secret=BASE32SECRET&issuer=issuer&algorithm=SHA1&digits=6&period=30
+otpauth://totp/[服务商]:[账号]?secret=[密钥]&issuer=[服务商]&algorithm=SHA1&digits=6&period=30
 ```
 
-示例：
+**示例**（虚拟数据）：
+
 ```
-otpauth://totp/协力数字化管理平台:yunqi.li?secret=IYS4Y4UKUKHMKJTS5N2ORYYSJWQEFAPW&issuer=协力数字化管理平台&algorithm=SHA1&digits=6&period=30
+otpauth://totp/ExampleCorp:user@example.com?secret=JBSWY3DPEHPK3PXP&issuer=ExampleCorp&algorithm=SHA1&digits=6&period=30
 ```
 
-### 2. 查看密码
+**参数说明**：
 
-添加成功后，TOTP 卡片会实时显示 6 位验证码：
-- 绿色数字：当前有效的验证码
-- 进度条：显示剩余有效时间（30 秒周期）
-- 点击数字可复制到剪贴板
+| 参数 | 说明 | 默认值 |
+|------|------|--------|
+| `secret` | Base32 编码的密钥（必需） | - |
+| `issuer` | 服务提供商名称 | - |
+| `algorithm` | HMAC 算法：SHA1/SHA256/SHA512 | SHA1 |
+| `digits` | 密码位数：6 或 8 | 6 |
+| `period` | 有效周期（秒） | 30 |
 
-### 3. 删除账号
+### 查看密码
+
+添加成功后，TOTP 卡片会：
+- 实时显示 6 位验证码
+- 进度条显示剩余有效时间
+- 点击数字复制到剪贴板
+
+### 删除账号
 
 点击卡片底部的「删除」按钮移除账号。
 
 ## 配置存储
 
-账号配置存储在本地 JSON 文件中：
-
-### 存储位置
+配置文件位置（所有平台统一）：
 
 | 系统 | 路径 |
 |------|------|
-| Windows | `%APPDATA%\cludix-totp\config.json` |
-| macOS | `~/Library/Application Support/cludix-totp/config.json` |
+| Windows | `C:\Users\<用户名>\.config\cludix-totp\config.json` |
+| macOS | `~/.config/cludix-totp/config.json` |
 | Linux | `~/.config/cludix-totp/config.json` |
 
 ### 配置文件格式
@@ -115,12 +120,12 @@ otpauth://totp/协力数字化管理平台:yunqi.li?secret=IYS4Y4UKUKHMKJTS5N2OR
 {
   "accounts": [
     {
-      "id": "issuer:account:XXXX",
-      "issuer": "服务名称",
-      "account": "账号名",
-      "uri": "otpauth://totp/...",
+      "id": "ExampleCorp:user@example.com:JBSW",
+      "issuer": "ExampleCorp",
+      "account": "user@example.com",
+      "uri": "otpauth://totp/ExampleCorp:user@example.com?secret=JBSWY3DPEHPK3PXP&issuer=ExampleCorp",
       "config": {
-        "secret": "BASE32SECRET",
+        "secret": "JBSWY3DPEHPK3PXP",
         "digits": 6,
         "period": 30,
         "algorithm": "SHA1"
@@ -130,60 +135,36 @@ otpauth://totp/协力数字化管理平台:yunqi.li?secret=IYS4Y4UKUKHMKJTS5N2OR
 }
 ```
 
-### 手动编辑配置
+可直接编辑 `config.json` 批量导入账号。
 
-可直接编辑 `config.json` 文件添加账号（适用于批量导入）。
-
-**注意**：Secret 是敏感信息，请妥善保管配置文件。
-
-## 支持的参数
-
-| 参数 | 说明 | 默认值 |
-|------|------|--------|
-| `secret` | Base32 编码的密钥（必需） | - |
-| `issuer` | 服务提供商名称 | - |
-| `algorithm` | HMAC 算法：SHA1/SHA256/SHA512 | SHA1 |
-| `digits` | 密码位数：6 或 8 | 6 |
-| `period` | 有效周期（秒）：30 或 60 | 30 |
+**警告**：Secret 是敏感信息，请妥善保管配置文件！
 
 ## 项目结构
 
 ```
 cludix-totp/
-├── src/                          # React 前端
-│   ├── components/
-│   │   ├── TotpCard.tsx          # TOTP 显示卡片
-│   │   └── AddAccountModal.tsx   # 添加账号弹窗
-│   ├── utils/
-│   │   ├── base32.ts             # Base32 解码器
-│   │   ├── totp.ts               # TOTP 核心算法 (RFC 6238)
-│   │   └── uriParser.ts          # otpauth:// URI 解析器
-│   ├── App.tsx                   # 主应用
-│   └── App.css                   # 样式
-├── src-tauri/                    # Tauri 后端
-│   ├── src/
-│   │   ├── lib.rs                # Rust commands (配置读写)
-│   │   └── main.rs               # 入口
-│   ├── capabilities/             # 权限配置
-│   ├── icons/                    # 应用图标
-│   ├── Cargo.toml
-│   └── tauri.conf.json           # Tauri 配置
+├── src/                    # React 前端
+│   ├── components/         # UI 组件
+│   ├── utils/              # TOTP 算法
+│   └── App.tsx
+├── src-tauri/              # Tauri 后端
+│   ├── src/lib.rs          # 配置读写
+│   └── tauri.conf.json
 ├── package.json
 └── README.md
 ```
 
 ## 技术栈
 
-- **前端**: React 18 + TypeScript + Vite
-- **后端**: Tauri v2 + Rust
-- **算法**: RFC 6238 TOTP (Web Crypto API HMAC-SHA1)
-- **存储**: 本地 JSON 文件
+- React 18 + TypeScript + Vite
+- Tauri v2 + Rust
+- RFC 6238 TOTP (Web Crypto API)
 
 ## 安全说明
 
-- TOTP 密钥存储在本地，不上传任何服务器
-- 应用不包含网络请求功能
-- 密钥仅用于本地计算验证码
+- 密钥仅存储在本地
+- 无网络请求
+- 无数据上传
 
 ## License
 
